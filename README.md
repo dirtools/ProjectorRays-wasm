@@ -1,4 +1,21 @@
-# ProjectorRays Shockwave Decompiler
+# ProjectorRays Shockwave Decompiler (WASM build)
+
+This is a fork of ProjectorRays to work in WASM, it is just some minor adjustments to get it working.
+
+This requires not using boost, some alternatives have been created in src/emscripten/boost and requires building with mpg123.
+
+Building:
+
+```sh
+# First compile mpg123
+make wasm-mpg123
+
+# Next compile ProjectorRays
+make wasm WASM_MPG123=1
+```
+
+
+---
 
 [![Discord](https://img.shields.io/discord/1018389040350896179?label=discord&logo=discord)](https://discord.gg/yCfAraZx5E)
 

@@ -8,7 +8,9 @@
 #include <string>
 
 #include <boost/format.hpp>
+#ifndef PROJECTORRAYS_DISABLE_MPG123
 #include <mpg123.h>
+#endif
 
 #include "common/log.h"
 #include "common/stream.h"
@@ -45,6 +47,27 @@ size_t samplesToBytes(size_t samples, int channels, int sampleSize) {
 	return bytes;
 }
 
+#ifdef PROJECTORRAYS_DISABLE_MPG123
+bool decodeMP3(
+	Common::ReadStream &in,
+	Common::WriteStream &out,
+	int hdrSampleRate,
+	int hdrChannels,
+	int hdrSampleSize,
+	size_t hdrSkipSamples,
+	int32_t chunkID
+) {
+	(void)in;
+	(void)out;
+	(void)hdrSampleRate;
+	(void)hdrChannels;
+	(void)hdrSampleSize;
+	(void)hdrSkipSamples;
+	(void)chunkID;
+	Common::warning("MP3 decoding is disabled in this build");
+	return false;
+}
+#else
 bool decodeMP3(
 	Common::ReadStream &in,
 	Common::WriteStream &out,
@@ -143,6 +166,7 @@ bool decodeMP3(
 
 	return true;
 }
+#endif
 
 ssize_t decompressSnd(Common::ReadStream &in, Common::WriteStream &out, int32_t chunkID) {
 	if (in.size() == 0)

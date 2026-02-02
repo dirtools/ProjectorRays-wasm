@@ -91,6 +91,7 @@ public:
 	size_t chunkSize(int32_t id);
 
 	void writeToFile(const std::filesystem::path &path);
+	std::vector<uint8_t> writeToBuffer();
 	void generateInitialMap();
 	void generateMemoryMap();
 	void write(Common::WriteStream &stream);

@@ -10,3 +10,6 @@ fontmaps/*.h
 *.o
 /projectorrays
 /projectorrays.exe
+
+projectorrays.js
+projectorrays.wasm

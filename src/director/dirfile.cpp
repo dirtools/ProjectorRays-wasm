@@ -538,6 +538,15 @@ void DirectorFile::writeToFile(const std::filesystem::path &path) {
 	IO::writeFile(path, stream);
 }
 
+std::vector<uint8_t> DirectorFile::writeToBuffer() {
+	generateInitialMap();
+	generateMemoryMap();
+	std::vector<uint8_t> buf(size());
+	Common::WriteStream stream(buf.data(), buf.size(), endianness);
+	write(stream);
+	return buf;
+}
+
 void DirectorFile::generateInitialMap() {
 	initialMap = std::make_unique<InitialMapChunk>(this);
 	initialMap->version = 1;

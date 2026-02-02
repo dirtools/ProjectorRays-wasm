@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ProjectorRays WASM Demo</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 24px; }
+      #status { margin-top: 12px; color: #444; }
+      .row { margin: 12px 0; }
+    </style>
+  </head>
+  <body>
+    <h1>ProjectorRays WASM Demo</h1>
+    <div class="row">
+      <input type="file" id="fileInput" accept=".dcr,.dxr,.cct,.cxt,.dir,.cst" />
+    </div>
+    <div id="status">Loading WASM...</div>
+
+    <script>
+      const statusEl = document.getElementById("status");
+      const fileInput = document.getElementById("fileInput");
+
+      function setStatus(text) {
+        statusEl.textContent = text;
+      }
+
+      let moduleReadyResolve;
+      const moduleReady = new Promise((resolve) => {
+        moduleReadyResolve = resolve;
+      });
+
+      window.Module = {
+        locateFile(path, prefix) {
+          return (prefix || "") + path;
+        },
+        onRuntimeInitialized() {
+          if (!Module._projectorrays_decompile || !Module._projectorrays_free) {
+            setStatus("WASM loaded, but exports are missing. Rebuild with make wasm.");
+          } else {
+            setStatus("Ready. Choose a file.");
+          }
+          moduleReadyResolve();
+        }
+      };
+    </script>
+    <script src="./projectorrays.js"></script>
+    <script>
+      function outputNameFor(inputName) {
+        const lower = inputName.toLowerCase();
+        if (lower.endsWith(".dcr") || lower.endsWith(".dxr") || lower.endsWith(".dir")) {
+          return inputName.replace(/\.(dcr|dxr|dir)$/i, ".dir");
+        }
+        if (lower.endsWith(".cct") || lower.endsWith(".cxt") || lower.endsWith(".cst")) {
+          return inputName.replace(/\.(cct|cxt|cst)$/i, ".cst");
+        }
+        return inputName + ".dir";
+      }
+
+      function getHeapU8() {
+        if (Module.HEAPU8) return Module.HEAPU8;
+        if (typeof HEAPU8 !== "undefined") return HEAPU8;
+        return undefined;
+      }
+
+      function getHeapU32() {
+        if (Module.HEAPU32) return Module.HEAPU32;
+        if (typeof HEAPU32 !== "undefined") return HEAPU32;
+        return undefined;
+      }
+
+      async function decompileFile(file) {
+        setStatus("Reading input...");
+        await moduleReady;
+        const inputBytes = new Uint8Array(await file.arrayBuffer());
+
+        const heapU8 = getHeapU8();
+        const heapU32 = getHeapU32();
+        if (!heapU8 || !heapU32) {
+          throw new Error("WASM memory not ready (HEAPU8/HEAPU32 missing).");
+        }
+
+        const malloc = Module._malloc || (typeof _malloc !== "undefined" ? _malloc : undefined);
+        const free = Module._free || (typeof _free !== "undefined" ? _free : undefined);
+        if (!malloc || !free) {
+          throw new Error("Missing _malloc/_free exports. Rebuild with the updated Makefile.");
+        }
+
+        const inPtr = malloc(inputBytes.length);
+        heapU8.set(inputBytes, inPtr);
+
+        const outSizePtr = malloc(4);
+        if (!Module._projectorrays_decompile || !Module._projectorrays_free) {
+          free(outSizePtr);
+          free(inPtr);
+          throw new Error("Missing projectorrays exports. Rebuild with make wasm.");
+        }
+
+        const outPtr = Module._projectorrays_decompile(inPtr, inputBytes.length, outSizePtr);
+
+        if (!outPtr) {
+          free(outSizePtr);
+          free(inPtr);
+          throw new Error("Decompile failed (invalid file or unsupported format).");
+        }
+
+        const outSize = heapU32[outSizePtr >> 2];
+        const output = heapU8.slice(outPtr, outPtr + outSize);
+
+        Module._projectorrays_free(outPtr);
+        free(outSizePtr);
+        free(inPtr);
+
+        return output;
+      }
+
+      fileInput.addEventListener("change", async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) {
+          return;
+        }
+
+        try {
+          setStatus("Decompiling...");
+          const outputBytes = await decompileFile(file);
+
+          const blob = new Blob([outputBytes], { type: "application/octet-stream" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = outputNameFor(file.name);
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+
+          setStatus("Done. Download should start.");
+        } catch (err) {
+          console.error(err);
+          const message = err && err.message ? err.message : String(err);
+          setStatus("Error: " + message);
+        }
+      });
+    </script>
+  </body>
+</html>
