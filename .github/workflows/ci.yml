@@ -3,26 +3,32 @@ name: CI
 on: [push, pull_request]
 
 jobs:
-  windows:
-    name: Windows
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
+  wasm:
+    name: WASM
+    runs-on: ubuntu-latest
     steps:
-      - name: Set up MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: >-
-            git
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-zlib
-            mingw-w64-x86_64-boost
-            mingw-w64-x86_64-mpg123
-            vim
       - name: Checkout ProjectorRays
         uses: actions/checkout@v3
-      - name: Build
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.58
+      - name: Build WASM
         run: |
-          mingw32-make
+          make wasm
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: projectorrays-wasm
+          path: |
+            projectorrays.js
+            projectorrays.wasm
+            projectorrays.d.ts
+      - name: Release WASM artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            projectorrays.js
+            projectorrays.wasm
+            projectorrays.d.ts
