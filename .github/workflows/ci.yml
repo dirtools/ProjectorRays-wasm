@@ -25,6 +25,20 @@ jobs:
       - name: Set autotools m4 path
         run: |
           echo "ACLOCAL_PATH=/usr/share/aclocal" >> "$GITHUB_ENV"
+      - name: Debug autotools timestamps
+        if: always()
+        run: |
+          echo "== mpg123 timestamps =="
+          ls -l third_party/mpg123/configure third_party/mpg123/configure.ac || true
+          echo "== autotools versions =="
+          autoconf --version | head -n 1
+          aclocal --version | head -n 1
+          automake --version | head -n 1
+          libtoolize --version | head -n 1 || true
+          echo "== aclocal dirs =="
+          aclocal --print-ac-dir || true
+          echo "== env (ACLOCAL/AUTOCONF/AUTOMAKE) =="
+          env | rg '^(ACLOCAL|AUTOCONF|AUTOMAKE|AUTOHEADER)=' || true
       - name: Build WASM
         run: |
           make wasm-mpg123 wasm
