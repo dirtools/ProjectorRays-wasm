@@ -40,4 +40,9 @@ else
   "$@"
 fi
 
+VERSION="$(PKG_PATH="$PKG_PATH" node -e 'console.log(require(process.env.PKG_PATH).version)')"
+TAG="v$VERSION"
+git -C "$ROOT_DIR" tag "$TAG"
+git -C "$ROOT_DIR" push origin "$TAG"
+
 echo "Donee!"
