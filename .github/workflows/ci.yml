@@ -22,6 +22,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y autoconf automake libtool libtool-bin pkg-config
+      - name: Set autotools m4 path
+        run: |
+          echo "ACLOCAL_PATH=/usr/share/aclocal" >> "$GITHUB_ENV"
       - name: Build WASM
         run: |
           make wasm-mpg123 wasm
