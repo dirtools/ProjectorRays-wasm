@@ -1,0 +1,7 @@
+{
+  "clangd.fallbackFlags": [
+    "-I${workspaceFolder}/third_party/ProjectorRays/src",
+    "-I${workspaceFolder}/src/cpp/emscripten",
+    "-std=c++17"
+  ]
+}

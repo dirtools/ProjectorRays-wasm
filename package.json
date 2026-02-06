@@ -1,0 +1,53 @@
+{
+  "name": "projectorrays",
+  "version": "1.0.0",
+  "license": "MPL-2.0",
+  "description": "ProjectorRays WASM loader for Node and browsers.",
+  "type": "module",
+  "main": "./dist/pkg/index.cjs",
+  "module": "./dist/pkg/index.es.js",
+  "types": "./dist/pkg/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/pkg/index.d.ts",
+      "import": "./dist/pkg/index.es.js",
+      "require": "./dist/pkg/index.cjs"
+    },
+    "./embedded": {
+      "types": "./dist/pkg/embedded.d.ts",
+      "import": "./dist/pkg/embedded.es.js",
+      "require": "./dist/pkg/embedded.cjs"
+    },
+    "./web": {
+      "types": "./dist/pkg/web.d.ts",
+      "import": "./dist/pkg/web.es.js",
+      "require": "./dist/pkg/web.cjs"
+    },
+    "./node": {
+      "types": "./dist/pkg/node.d.ts",
+      "import": "./dist/pkg/node.es.js",
+      "require": "./dist/pkg/node.cjs"
+    }
+  },
+  "files": [
+    "dist/pkg",
+    "dist/projectorrays.js",
+    "dist/projectorrays.cjs",
+    "dist/projectorrays.single.js",
+    "dist/projectorrays.wasm",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "rm -rf dist/pkg &&vite build && npm run build:types",
+    "build:types": "tsc -p tsconfig.build.json",
+    "dev": "vite",
+    "preview": "vite preview",
+    "publish": "rm -rf dist && make && yarn build && sh ./publish.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vite": "^5.4.10"
+  },
+  "packageManager": "yarn@4.12.0"
+}

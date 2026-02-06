@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Example</title>
+        <style>
+            body {
+                font-family: system-ui, -apple-system, sans-serif;
+                margin: 2rem;
+            }
+            code {
+                background: #f3f3f3;
+                padding: 0.1rem 0.3rem;
+                border-radius: 4px;
+            }
+        </style>
+    </head>
+    <body>
+        <form id="upload-form">
+            <label>
+                Director file:
+                <input type="file" id="director-file" required />
+            </label>
+            <button type="submit">Load file</button>
+        </form>
+        <pre id="status">Ready......</pre>
+        <script type="module">
+            import { DirectorFile } from "./dist/pkg/embedded.es.js";
+
+            const status = document.getElementById("status");
+            const form = document.getElementById("upload-form");
+            const fileInput = document.getElementById("director-file");
+
+            form.addEventListener("submit", async (event) => {
+                event.preventDefault();
+                const file = fileInput.files?.[0];
+                if (!file) {
+                    status.textContent = "Please choose a file first.";
+                    return;
+                }
+
+                status.textContent = `Loading ${file.name}...`;
+                try {
+                    const buffer = await file.arrayBuffer();
+                    const directorFile = await DirectorFile.read(buffer);
+                    status.textContent = `Loaded ${file.name}.`;
+                    console.log("DirectorFile:", directorFile);
+                } catch (error) {
+                    status.textContent = `Failed to load ${file.name}.`;
+                    console.error(error);
+                }
+            });
+        </script>
+    </body>
+</html>
