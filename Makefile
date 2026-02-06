@@ -74,7 +74,8 @@ wasm: $(FONTMAP_HEADERS)
 .PHONY: wasm-mpg123
 wasm-mpg123:
 	mkdir -p $(MPG123_WASM_BUILD_DIR)
-	cd $(MPG123_WASM_BUILD_DIR) && emconfigure ../configure --disable-shared --enable-static --disable-assembly --with-cpu=generic --host=wasm32-unknown-emscripten
+	cd $(MPG123_WASM_BUILD_DIR) && emconfigure ../configure --disable-shared --enable-static --disable-assembly --with-cpu=generic --host=wasm32-unknown-emscripten --disable-maintainer-mode
+	touch $(MPG123_DIR)/configure
 	EMCC_CFLAGS="-O2" emmake make -C $(MPG123_WASM_BUILD_DIR)
 
 .PHONY: clean
