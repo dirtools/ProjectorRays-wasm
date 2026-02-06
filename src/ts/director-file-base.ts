@@ -1,53 +1,8 @@
+import { DirectorChunk, DirectorChunkId, DirectorChunkJSON, DirectorScriptDetail, DirectorScriptDump, DirectorScriptType, ReadInput } from ".";
 import { loadProjectorRays, type ProjectorRaysLoaderOptions, type ProjectorRaysModule } from "./loader";
-
-export type ReadInput = Uint8Array | ArrayBuffer;
-export type DirectorChunk = {
-    fourCC: string;
-    id: number;
-    data: Uint8Array;
-};
-export type DirectorChunkJSON<T = unknown> = {
-    fourCC: string;
-    id: number;
-    data: T;
-};
-
-export type DirectorScriptType =
-    | "BehaviorScript"
-    | "ScoreScript"
-    | "MovieScript"
-    | "ParentScript"
-    | "CastScript"
-    | "UnknownScript";
-
-export type DirectorScriptEntry = {
-    scriptId: number;
-    memberId: number;
-    memberName: string;
-    scriptType: DirectorScriptType;
-    lingo: string;
-    bytecode: string;
-};
-
-export type DirectorScriptDetail = DirectorScriptEntry & {
-    castName: string;
-};
-
-export type DirectorScriptCast = {
-    name: string;
-    scripts: DirectorScriptEntry[];
-};
-
-
-export type DirectorScriptDump = {
-    isCast: boolean;
-    version: number;
-    casts: DirectorScriptCast[];
-};
-
-function toUint8Array(input: ReadInput): Uint8Array {
-    return input instanceof Uint8Array ? input : new Uint8Array(input);
-}
+import { fourCCToString } from "./util/fourCCToString";
+import { normalizeFourCC } from "./util/normalizeFourCC";
+import { toUint8Array } from "./util/toUint8Array";
 
 function assertWasmModule(module: ProjectorRaysModule): asserts module is Required<ProjectorRaysModule> {
     if (!module.cwrap || !module.HEAPU8 || !module.HEAPU32 || !module._malloc || !module._free) {
@@ -56,6 +11,7 @@ function assertWasmModule(module: ProjectorRaysModule): asserts module is Requir
 }
 
 export abstract class DirectorFileBase {
+
     #input: Uint8Array;
     #handle: number | null;
     #destroyed: boolean;
@@ -101,10 +57,15 @@ export abstract class DirectorFileBase {
         }
     }
 
-    chunkExists(fourCC: number | string, id: number): boolean {
+    /**
+     * Check whether a chunk exists by fourCC at an id.
+     * fourCC can be a 4-character string (e.g. "CASt") or a numeric code.
+     * @returns `true` if the chunk exists, `false` otherwise.
+     */
+    chunkExists(fourCC: number | string, id: DirectorChunkId): boolean {
         this.#ensureHandle("chunkExists");
         assertWasmModule(this.#module);
-        const fourCCValue = this.#normalizeFourCC(fourCC);
+        const fourCCValue = normalizeFourCC(fourCC);
         const func = this.#module.cwrap("projectorrays_chunk_exists", "number", [
             "number",
             "number",
@@ -113,10 +74,15 @@ export abstract class DirectorFileBase {
         return Boolean(func(this.#handle, fourCCValue, id));
     }
 
-    getChunk(fourCC: number | string, id: number): DirectorChunk | null {
+    /**
+     * Fetch a chunk by fourCC and id, returning raw bytes.
+     * fourCC can be a 4-character string (e.g. "CASt") or a numeric code.
+     * @returns a `DirectorChunk` object or `null` if the chunk does not exist.
+     */
+    getChunk(fourCC: number | string, id: DirectorChunkId): DirectorChunk | null {
         this.#ensureHandle("getChunk");
         assertWasmModule(this.#module);
-        const fourCCValue = this.#normalizeFourCC(fourCC);
+        const fourCCValue = normalizeFourCC(fourCC);
         const func = this.#module.cwrap("projectorrays_get_chunk", "number", [
             "number",
             "number",
@@ -134,7 +100,11 @@ export abstract class DirectorFileBase {
                 return null;
             }
             const data = this.#module.HEAPU8.slice(outputPtr, outputPtr + outputSize);
-            return { fourCC: this.#fourCCToString(fourCCValue), id, data };
+            return {
+                fourCC: fourCCToString(fourCCValue),
+                id,
+                data,
+            };
         } finally {
             if (outputPtr) {
                 const free = this.#module.cwrap("projectorrays_free", null, ["number"]);
@@ -144,7 +114,11 @@ export abstract class DirectorFileBase {
         }
     }
 
-    getScript(id: number): DirectorScriptDetail | null {
+    /**
+     * Fetch a specific script entry by script id.
+     * @returns a script detail object.
+     */
+    getScript(id: DirectorChunkId): DirectorScriptDetail | null {
         this.#ensureHandle("getScript");
         assertWasmModule(this.#module);
         const func = this.#module.cwrap("projectorrays_get_script", "number", [
@@ -184,6 +158,10 @@ export abstract class DirectorFileBase {
         }
     }
 
+    /**
+     * Return the total file size in bytes.
+     * @returns the total file size in bytes.
+     */
     size(): number {
         this.#ensureHandle("size");
         assertWasmModule(this.#module);
@@ -191,11 +169,19 @@ export abstract class DirectorFileBase {
         return func(this.#handle) as number;
     }
 
+    /**
+     * Write an unprotected version of the file to a buffer.
+     * @returns a buffer containing the unprotected file contents.
+     */
     writeToBuffer(): Uint8Array {
         this.#ensureHandle("writeToBuffer");
         return this.#callHandle("projectorrays_implemented_write_to_buffer");
     }
 
+    /**
+     * Dump script metadata, source, and bytecode.
+     * @returns a script dump object.
+     */
     dumpScripts(): DirectorScriptDump {
         this.#ensureHandle("dumpScripts");
         const output = this.#callHandle("projectorrays_implemented_dump_scripts");
@@ -217,12 +203,20 @@ export abstract class DirectorFileBase {
         return this.#normalizeScriptDump(decoded);
     }
 
+    /**
+     * Dump all chunks as raw bytes.
+     * @returns an array of chunk objects.
+     */
     dumpChunks(): DirectorChunk[] {
         this.#ensureHandle("dumpChunks");
         const output = this.#callHandle("projectorrays_implemented_dump_chunks");
         return this.#decodeChunkDump(output);
     }
 
+    /**
+     * Dump all chunks as JSON if they're available.
+     * @returns an array of chunk JSON objects.
+     */
     dumpJSON(): DirectorChunkJSON[] {
         this.#ensureHandle("dumpJSON");
         const output = this.#callHandle("projectorrays_implemented_dump_json");
@@ -232,6 +226,10 @@ export abstract class DirectorFileBase {
         );
     }
 
+    /**
+     * Return whether the file is a cast.
+     * @returns `true` if the file is a cast, `false` otherwise.
+     */
     isCast(): boolean {
         this.#ensureHandle("isCast");
         assertWasmModule(this.#module);
@@ -239,6 +237,9 @@ export abstract class DirectorFileBase {
         return Boolean(func(this.#handle));
     }
 
+    /**
+     * Release WASM resources and free up memory. You cannot use this instance afterwards.
+     */
     destroy(): void {
         if (this.#destroyed) {
             return;
@@ -254,10 +255,6 @@ export abstract class DirectorFileBase {
         if (!this.#handle) {
             throw new Error(`DirectorFile.${methodName} requires a valid handle, we did not read?`);
         }
-    }
-
-    #notImplemented(methodName: string): never {
-        throw new Error(`DirectorFile.${methodName} is not implemented in the WASM wrapper.`);
     }
 
     #callHandle(
@@ -317,7 +314,7 @@ export abstract class DirectorFileBase {
             }
             const data = output.slice(offset, offset + size);
             offset += size;
-            const fourCC = this.#fourCCToString(fourCCValue);
+            const fourCC = fourCCToString(fourCCValue);
             chunks.push({ fourCC, id, data });
         }
         return chunks;
@@ -406,7 +403,7 @@ export abstract class DirectorFileBase {
     #normalizeChunkJSONDump(
         input: Array<{
             fourCC?: string;
-            id?: number;
+            id?: DirectorChunkId;
             data?: unknown;
         }>
     ): DirectorChunkJSON[] {
@@ -415,67 +412,6 @@ export abstract class DirectorFileBase {
             id: Number(entry.id ?? 0),
             data: entry.data ?? null,
         }));
-    }
-
-    #normalizeFourCC(fourCC: number | string): number {
-        if (typeof fourCC === "number") {
-            return fourCC >>> 0;
-        }
-        if (fourCC.length !== 4) {
-            throw new Error("fourCC string must be exactly 4 characters.");
-        }
-        return (
-            (fourCC.charCodeAt(0) << 24) |
-            (fourCC.charCodeAt(1) << 16) |
-            (fourCC.charCodeAt(2) << 8) |
-            fourCC.charCodeAt(3)
-        ) >>> 0;
-    }
-
-    #fourCCToString(fourCCValue: number): string {
-        const bytes = [
-            (fourCCValue >> 24) & 0xff,
-            (fourCCValue >> 16) & 0xff,
-            (fourCCValue >> 8) & 0xff,
-            fourCCValue & 0xff,
-        ];
-        let out = "";
-        for (const byte of bytes) {
-            switch (byte) {
-                case 0x22:
-                    out += '\\"';
-                    break;
-                case 0x5c:
-                    out += "\\\\";
-                    break;
-                case 0x08:
-                    out += "\\b";
-                    break;
-                case 0x0c:
-                    out += "\\f";
-                    break;
-                case 0x0a:
-                    out += "\\n";
-                    break;
-                case 0x0d:
-                    out += "\\r";
-                    break;
-                case 0x09:
-                    out += "\\t";
-                    break;
-                case 0x0b:
-                    out += "\\v";
-                    break;
-                default:
-                    if (byte < 0x20 || byte > 0x7f) {
-                        out += `\\x${byte.toString(16).padStart(2, "0").toUpperCase()}`;
-                    } else {
-                        out += String.fromCharCode(byte);
-                    }
-                    break;
-            }
-        }
-        return out;
     }
 
     #releaseHandle(): void {

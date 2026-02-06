@@ -2,10 +2,9 @@
 
 ProjectorRays as a WASM package!
 
-Using 
+A web example is available in [example.html](example.html).
 
 ## Getting started 
-
 
 Install the projectorrays package from npm:
 
@@ -56,6 +55,54 @@ directorFile.dumpChunks()
 const buffer = directorFile.writeToBuffer()
 ```
 
+## DirectorFile API
+
+The `DirectorFile` class exposes the same core API in all environments
+(`projectorrays/embedded`, `projectorrays/web`, `projectorrays/node`), with
+extra filesystem helpers in Node.
+
+### Construction
+
+- `DirectorFile.read(input, options?)` -> `Promise<DirectorFile>`
+  Read a Director file from a `Uint8Array` or `ArrayBuffer`.
+- `DirectorFile.readFromPath(path, options?)` (node only) -> `Promise<DirectorFile>`
+  Read a Director file from disk.
+
+### Chunks and metadata
+
+Note: `fourCC` can be a 4-character string (e.g. `"CASt"`) or a numeric fourCC code.
+  
+The numeric form is useful when you already have the 32-bit value from another parser or are working directly with chunk tables.
+
+- `chunkExists(fourCC, chunkId)` -> `boolean`
+  Check whether a chunk exists by fourCC and chunkId.
+- `getChunk(fourCC, chunkId)` -> `DirectorChunk | null`
+  Fetch a chunk's raw bytes.
+- `dumpChunks()` -> `DirectorChunk[]`
+  Dump all chunks as raw bytes.
+- `dumpJSON()` -> `DirectorChunkJSON[]`
+  Dump all chunks as JSON when available.
+- `size()` -> `number`
+  Total size in bytes.
+- `isCast()` -> `boolean`
+  Whether the file is a cast.
+
+### Scripts
+
+- `getScript(id)` -> `DirectorScriptDetail | null`
+  Fetch a specific script entry.
+- `dumpScripts()` -> `DirectorScriptDump`
+  Dump script metadata, source, and bytecode.
+
+### Output and lifecycle
+
+- `writeToBuffer()` -> `Uint8Array`
+  Write an unprotected version to a buffer.
+- `writeToFile(path)` (node only) -> `void`
+  Write the unprotected version to disk.
+- `destroy()` -> `void`
+  Release WASM resources. The instance should not be used afterwards.
+
 ## Building
 
 Note: We use Vite for our package. 
@@ -67,7 +114,6 @@ Then, install dependencies using yarn v4
 ```
 yarn install
 ```
-
 
 Next, build mpg123:
 

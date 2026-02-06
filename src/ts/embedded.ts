@@ -3,13 +3,17 @@ import {
     type ProjectorRaysLoaderOptions,
     type ProjectorRaysModule,
 } from "./loader";
-import { DirectorFileBase, type ReadInput } from "./director-file-base";
+import { DirectorFileBase } from "./director-file-base";
+import { ReadInput } from ".";
 
 const defaultEmbeddedGlueUrl = new URL(
     "../../dist/projectorrays.single.js",
     import.meta.url
 ).href;
 
+/**
+ * Load the WASM module using the embedded single-file build.
+ */
 export async function loadProjectorRaysEmbedded(
     options: ProjectorRaysLoaderOptions = {}
 ): Promise<ProjectorRaysModule> {
@@ -21,6 +25,9 @@ export async function loadProjectorRaysEmbedded(
 }
 
 export class DirectorFile extends DirectorFileBase {
+    /**
+     * Read a Director file from a buffer.
+     */
     static async read(
         input: ReadInput,
         options: ProjectorRaysLoaderOptions = {}

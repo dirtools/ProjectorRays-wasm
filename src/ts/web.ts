@@ -1,7 +1,11 @@
 import { type ProjectorRaysLoaderOptions } from "./loader";
-import { DirectorFileBase, type ReadInput } from "./director-file-base";
+import { DirectorFileBase } from "./director-file-base";
+import { ReadInput } from ".";
 
 export class DirectorFile extends DirectorFileBase {
+    /**
+     * Read a Director file from a buffer.
+     */
     static async read(
         input: ReadInput,
         options: ProjectorRaysLoaderOptions = {}

@@ -102,7 +102,6 @@ static bool writeDirectorToBuffer(Director::DirectorFile &dir, std::vector<uint8
     return true;
 }
 
-
 EMSCRIPTEN_KEEPALIVE uintptr_t projectorrays_read(const uint8_t *input, size_t inputSize) {
     if (!input || inputSize == 0) {
         return 0;
@@ -176,10 +175,8 @@ EMSCRIPTEN_KEEPALIVE int projectorrays_size(uintptr_t handle) {
     }
 }
 
-EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_get_chunk(uintptr_t handle,
-                                                     uint32_t fourCC,
-                                                     int32_t id,
-                                                     size_t *outputSize) {
+EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_get_chunk(uintptr_t handle, uint32_t fourCC, int32_t id,
+                                                      size_t *outputSize) {
     if (!handle || !outputSize) {
         return nullptr;
     }
@@ -210,9 +207,8 @@ EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_get_chunk(uintptr_t handle,
     }
 }
 
-EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_get_script(uintptr_t handle,
-                                                      int32_t id,
-                                                      size_t *outputSize) {
+EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_get_script(uintptr_t handle, int32_t id,
+                                                       size_t *outputSize) {
     if (!handle || !outputSize) {
         return nullptr;
     }
@@ -299,7 +295,7 @@ EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_get_script(uintptr_t handle,
 }
 
 EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_implemented_dump_json(uintptr_t handle,
-                                                                 size_t *outputSize) {
+                                                                  size_t *outputSize) {
     if (!handle || !outputSize) {
         return nullptr;
     }
@@ -368,7 +364,8 @@ EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_implemented_dump_json(uintptr_t hand
     }
 }
 
-EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_implemented_dump_chunks(uintptr_t handle, size_t *outputSize) {
+EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_implemented_dump_chunks(uintptr_t handle,
+                                                                    size_t *outputSize) {
     if (!handle || !outputSize) {
         return nullptr;
     }
@@ -431,7 +428,8 @@ EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_implemented_dump_chunks(uintptr_t ha
     }
 }
 
-EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_implemented_write_to_buffer(uintptr_t handle, size_t *outputSize) {
+EMSCRIPTEN_KEEPALIVE uint8_t *projectorrays_implemented_write_to_buffer(uintptr_t handle,
+                                                                        size_t *outputSize) {
     if (!handle || !outputSize) {
         return nullptr;
     }
