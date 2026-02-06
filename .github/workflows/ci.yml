@@ -1,0 +1,39 @@
+name: CI
+
+on: [push, pull_request]
+
+permissions:
+  contents: write
+
+jobs:
+  wasm:
+    name: WASM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ProjectorRays
+        uses: actions/checkout@v3
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 3.1.58
+      - name: Build WASM
+        run: |
+          make wasm-mpg123 wasm
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: projectorrays-wasm
+          path: |
+            dist/projectorrays.cjs
+            dist/projectorrays.js
+            dist/projectorrays.single.js
+            dist/projectorrays.wasm
+      - name: Release WASM artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/projectorrays.cjs
+            dist/projectorrays.js
+            dist/projectorrays.single.js
+            dist/projectorrays.wasm
