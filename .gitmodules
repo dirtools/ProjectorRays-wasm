@@ -1,6 +1,8 @@
 [submodule "third_party/ProjectorRays"]
 	path = third_party/ProjectorRays
 	url = https://github.com/ProjectorRays/ProjectorRays.git
+	ignore = dirty
 [submodule "third_party/mpg123"]
 	path = third_party/mpg123
 	url = https://github.com/libsdl-org/mpg123.git
+	ignore = dirty
